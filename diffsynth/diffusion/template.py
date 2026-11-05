@@ -31,7 +31,7 @@ def check_template_model_format(model):
         raise NotImplementedError("`**kwargs` is not included in `forward`.")
 
 
-def load_template_model(path, torch_dtype=torch.bfloat16, device="cuda", verbose=1, state_dict=None):
+def load_template_model(path, torch_dtype=torch.bfloat16, device=get_device_type(), verbose=1, state_dict=None):
     spec = importlib.util.spec_from_file_location("template_model", os.path.join(path, "model.py"))
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)

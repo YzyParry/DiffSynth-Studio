@@ -16,6 +16,57 @@ AMD provides PyTorch packages based on ROCm, so most models can run without code
 
 On Apple Silicon devices, since VRAM and memory are unified, replace all `"cuda"` in the code with `"mps"` or `"cpu"`.
 
+## Intel GPU (XPU)
+
+PyTorch supports Intel GPUs natively through the `xpu` device. `DiffSynth-Studio` detects it automatically: pipelines, metrics and utilities created without an explicit `device` default to `"xpu"` on machines with an Intel GPU (and no NVIDIA GPU).
+
+### Inference
+
+The sample code uses `"cuda"` explicitly, so replace `"cuda"` with `"xpu"`. For example, here is the inference code for **Wan2.1-T2V-1.3B**, modified for Intel GPU:
+
+```diff
+import torch
+from diffsynth.utils.data import save_video, VideoData
+from diffsynth.pipelines.wan_video import WanVideoPipeline, ModelConfig
+
+vram_config = {
+    "offload_dtype": "disk",
+    "offload_device": "disk",
+    "onload_dtype": torch.bfloat16,
+    "onload_device": "cpu",
+    "preparing_dtype": torch.bfloat16,
+-   "preparing_device": "cuda",
++   "preparing_device": "xpu",
+    "computation_dtype": torch.bfloat16,
+-   "computation_device": "cuda",
++   "computation_device": "xpu",
+}
+pipe = WanVideoPipeline.from_pretrained(
+    torch_dtype=torch.bfloat16,
+-   device="cuda",
++   device="xpu",
+    model_configs=[
+        ModelConfig(model_id="Wan-AI/Wan2.1-T2V-1.3B", origin_file_pattern="diffusion_pytorch_model*.safetensors", **vram_config),
+        ModelConfig(model_id="Wan-AI/Wan2.1-T2V-1.3B", origin_file_pattern="models_t5_umt5-xxl-enc-bf16.pth", **vram_config),
+        ModelConfig(model_id="Wan-AI/Wan2.1-T2V-1.3B", origin_file_pattern="Wan2.1_VAE.pth", **vram_config),
+    ],
+    tokenizer_config=ModelConfig(model_id="Wan-AI/Wan2.1-T2V-1.3B", origin_file_pattern="google/umt5-xxl/"),
+-   vram_limit=torch.cuda.mem_get_info("cuda")[1] / (1024 ** 3) - 2,
++   vram_limit=torch.xpu.mem_get_info("xpu")[1] / (1024 ** 3) - 2,
+)
+```
+
+### Training
+
+`accelerate` supports Intel GPUs natively, so the training scripts under `examples/*/model_training` can be launched with `accelerate launch` without code changes. Multi-GPU training uses the `xccl` communication backend, which is built into PyTorch 2.8 and later.
+
+### Known limitations
+
+* CUDA-only attention libraries (FlashAttention, SageAttention, xFormers) are not available. PyTorch's `scaled_dot_product_attention` is used automatically instead.
+* Quantization backends built on CUDA kernels (`deep_gemm`, `deep_gemm_fp4`, `entropack`, `comfy_kitchen`, `minimax_h3_vdn_fp8`) are not supported; `bitsandbytes` and `torchao` depend on the Intel GPU support of the installed version. Fused Triton kernels that are only enabled on CUDA (e.g. in MiniMax-H3) fall back to their PyTorch implementations.
+* USP (Unified Sequence Parallel) is not supported, because `xfuser` and `yunchang` do not support Intel GPUs yet.
+* Some Intel GPUs (e.g. Arc A-series and integrated GPUs) do not support FP64 natively, while some models compute positional embeddings in `float64`. These models may fail or run slowly on such devices.
+
 ## Ascend NPU
 ### Inference
 When using Ascend NPU, you need to replace `"cuda"` with `"npu"` in your code.

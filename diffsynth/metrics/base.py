@@ -1,5 +1,6 @@
 import torch
 from ..core import ModelConfig
+from ..core.device.npu_compatible_device import get_device_type
 from ..models.model_loader import ModelPool
 
 class Metric(torch.nn.Module):
@@ -11,7 +12,7 @@ class Metric(torch.nn.Module):
         return value if isinstance(value, list) else [value]
 
     @staticmethod
-    def download_and_load_models(model_configs: list[ModelConfig], torch_dtype: torch.dtype = torch.float32, device="cuda", vram_limit: float = None):
+    def download_and_load_models(model_configs: list[ModelConfig], torch_dtype: torch.dtype = torch.float32, device=get_device_type(), vram_limit: float = None):
         model_pool = ModelPool()
         for model_config in model_configs:
             model_config.download_if_necessary()

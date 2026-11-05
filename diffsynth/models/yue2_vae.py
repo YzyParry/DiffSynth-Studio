@@ -16,6 +16,8 @@ from torch import nn
 from torch.nn.utils import weight_norm
 from transformers import PretrainedConfig, PreTrainedModel
 
+from ..core.device.npu_compatible_device import get_device_type
+
 
 def checkpoint(function, *args, **kwargs):
     from torch.utils.checkpoint import checkpoint as torch_checkpoint
@@ -409,7 +411,7 @@ class YuE2VAE(PreTrainedModel):
         device_map = kwargs.pop("device_map", None)
         if device_map is not None:
             if device_map == "auto":
-                device = "cuda" if torch.cuda.is_available() else "cpu"
+                device = get_device_type()
             elif isinstance(device_map, str):
                 device = device_map
             elif isinstance(device_map, dict) and set(device_map) == {""}:

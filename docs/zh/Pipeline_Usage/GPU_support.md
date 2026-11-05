@@ -16,6 +16,57 @@ AMD 提供了基于 ROCm 的 torch 包，所以大多数模型无需修改代码
 
 在 Apple Silicon 设备上，由于显存和内存是统一的，请将代码中的 `"cuda"` 全部修改为 `"mps"` 或 `"cpu"`。
 
+## Intel GPU (XPU)
+
+PyTorch 通过 `xpu` 设备原生支持 Intel GPU。`DiffSynth-Studio` 会自动检测该设备：在有 Intel GPU（且没有 NVIDIA GPU）的机器上，未显式指定 `device` 的 Pipeline、评估指标和工具函数默认使用 `"xpu"`。
+
+### 推理
+
+样例代码中显式使用了 `"cuda"`，需把 `"cuda"` 改为 `"xpu"`。例如，Wan2.1-T2V-1.3B 的推理代码：
+
+```diff
+import torch
+from diffsynth.utils.data import save_video, VideoData
+from diffsynth.pipelines.wan_video import WanVideoPipeline, ModelConfig
+
+vram_config = {
+    "offload_dtype": "disk",
+    "offload_device": "disk",
+    "onload_dtype": torch.bfloat16,
+    "onload_device": "cpu",
+    "preparing_dtype": torch.bfloat16,
+-   "preparing_device": "cuda",
++   "preparing_device": "xpu",
+    "computation_dtype": torch.bfloat16,
+-   "computation_device": "cuda",
++   "computation_device": "xpu",
+}
+pipe = WanVideoPipeline.from_pretrained(
+    torch_dtype=torch.bfloat16,
+-   device="cuda",
++   device="xpu",
+    model_configs=[
+        ModelConfig(model_id="Wan-AI/Wan2.1-T2V-1.3B", origin_file_pattern="diffusion_pytorch_model*.safetensors", **vram_config),
+        ModelConfig(model_id="Wan-AI/Wan2.1-T2V-1.3B", origin_file_pattern="models_t5_umt5-xxl-enc-bf16.pth", **vram_config),
+        ModelConfig(model_id="Wan-AI/Wan2.1-T2V-1.3B", origin_file_pattern="Wan2.1_VAE.pth", **vram_config),
+    ],
+    tokenizer_config=ModelConfig(model_id="Wan-AI/Wan2.1-T2V-1.3B", origin_file_pattern="google/umt5-xxl/"),
+-   vram_limit=torch.cuda.mem_get_info("cuda")[1] / (1024 ** 3) - 2,
++   vram_limit=torch.xpu.mem_get_info("xpu")[1] / (1024 ** 3) - 2,
+)
+```
+
+### 训练
+
+`accelerate` 原生支持 Intel GPU，`examples/*/model_training` 下的训练脚本可直接通过 `accelerate launch` 启动，无需修改代码。多卡训练使用 `xccl` 通信后端，该后端在 PyTorch 2.8 及以上版本中内置。
+
+### 已知限制
+
+* 仅支持 CUDA 的注意力库（FlashAttention、SageAttention、xFormers）不可用，框架会自动使用 PyTorch 的 `scaled_dot_product_attention`。
+* 基于 CUDA kernel 的量化后端（`deep_gemm`、`deep_gemm_fp4`、`entropack`、`comfy_kitchen`、`minimax_h3_vdn_fp8`）不可用；`bitsandbytes` 和 `torchao` 是否可用取决于所安装版本对 Intel GPU 的支持情况。仅在 CUDA 上启用的 Triton 融合算子（例如 MiniMax-H3 中的）会回退到 PyTorch 实现。
+* 暂不支持 USP（Unified Sequence Parallel），因为 `xfuser` 和 `yunchang` 尚未支持 Intel GPU。
+* 部分 Intel GPU（例如 Arc A 系列和核显）不原生支持 FP64，而部分模型使用 `float64` 计算位置编码，这些模型在此类设备上可能报错或运行较慢。
+
 ## Ascend NPU
 ### 推理
 使用 Ascend NPU 时，需把代码中的 `"cuda"` 改为 `"npu"`。

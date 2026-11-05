@@ -66,7 +66,7 @@ class SenseNovaU1ImagePipeline(BasePipeline):
         width: int = 2048,
         # Randomness
         seed: int = None,
-        rand_device: str = "cuda",
+        rand_device: str = get_device_type(),
         # Steps
         num_inference_steps: int = 50,
         # Scheduler

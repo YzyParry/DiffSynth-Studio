@@ -7,8 +7,14 @@ def is_torch_npu_available():
     return importlib.util.find_spec("torch_npu") is not None
 
 
+def is_torch_xpu_available():
+    # Intel GPUs are supported natively by PyTorch (>= 2.5) through `torch.xpu`, no extra plugin is required.
+    return hasattr(torch, "xpu") and torch.xpu.is_available()
+
+
 IS_CUDA_AVAILABLE = torch.cuda.is_available()
 IS_NPU_AVAILABLE = is_torch_npu_available() and torch.npu.is_available()
+IS_XPU_AVAILABLE = is_torch_xpu_available()
 
 if IS_NPU_AVAILABLE:
     import torch_npu
@@ -17,11 +23,13 @@ if IS_NPU_AVAILABLE:
 
 
 def get_device_type() -> str:
-    """Get device type based on current machine, currently only support CPU, CUDA, NPU."""
+    """Get device type based on current machine, currently only support CPU, CUDA, NPU, XPU."""
     if IS_CUDA_AVAILABLE:
         device = "cuda"
     elif IS_NPU_AVAILABLE:
         device = "npu"
+    elif IS_XPU_AVAILABLE:
+        device = "xpu"
     else:
         device = "cpu"
 
@@ -61,12 +69,7 @@ def empty_cache() -> None:
 
 def get_nccl_backend() -> str:
     """Return distributed communication backend type based on device type."""
-    if IS_CUDA_AVAILABLE:
-        return "nccl"
-    elif IS_NPU_AVAILABLE:
-        return "hccl"
-    else:
-        raise RuntimeError(f"No available distributed communication backend found on device type {get_device_type()}.")
+    return parse_nccl_backend(get_device_type())
 
 
 def enable_high_precision_for_bf16():
@@ -101,6 +104,9 @@ def parse_nccl_backend(device_type):
         return "nccl"
     elif device_type == "npu":
         return "hccl"
+    elif device_type == "xpu":
+        # Built into PyTorch XPU wheels since 2.8 (oneCCL based).
+        return "xccl"
     else:
         raise RuntimeError(f"No available distributed communication backend found on device type {device_type}.")
 

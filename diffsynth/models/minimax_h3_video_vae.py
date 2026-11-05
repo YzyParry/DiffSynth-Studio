@@ -8,6 +8,7 @@ from einops import rearrange
 from torchvision.transforms import Normalize
 
 from ..core.attention import attention_forward
+from ..core.device.npu_compatible_device import get_device_type
 from einops import repeat
 
 
@@ -139,7 +140,7 @@ class RotaryEmbeddingND(nn.Module):
         self.dim = dim
 
     def forward(self, img_ids):
-        with torch.autocast("cuda", enabled=False):
+        with torch.autocast(get_device_type(), enabled=False):
             inv_freq = 1 / self.rotary_base ** torch.arange(0, 1, 2 * self.n_dim / self.dim, dtype=torch.float32, device=img_ids.device)
             angles = (self.angle_scale * img_ids[:, :, :, None] * inv_freq[None, None, None, :]).flatten(2, 3).tile(2).unsqueeze(2)
             return torch.cos(angles), torch.sin(angles)
@@ -277,7 +278,7 @@ class ViT3DDecoder(nn.Module):
     def forward(self, x):
         B, _, T, H, W = x.shape
         num_suffix = 1 + self.num_register_tokens
-        with torch.autocast("cuda", enabled=False):
+        with torch.autocast(get_device_type(), enabled=False):
             hidden_states = self.x_embedder(_pack_tensors_3d(x, 1, 1))
         num_patches = hidden_states.shape[1]
         tokens = [hidden_states]
@@ -292,7 +293,7 @@ class ViT3DDecoder(nn.Module):
         rotary_pos_emb = self.pos_embed(img_ids)
         for block in self.transformer_blocks:
             hidden_states = block(hidden_states, rotary_pos_emb)
-        with torch.autocast("cuda", enabled=False):
+        with torch.autocast(get_device_type(), enabled=False):
             output = self.proj_out(self.norm_out(hidden_states))[:, :num_patches]
         return _unpack_tensors_3d(output, self.patch_size, self.patch_size_t, T * self.patch_size_t, H * self.patch_size, W * self.patch_size)
 

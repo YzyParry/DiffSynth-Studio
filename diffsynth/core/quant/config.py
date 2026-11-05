@@ -2,6 +2,7 @@ from dataclasses import dataclass, field, fields
 from typing import Any, Callable, Optional
 import torch
 from .base import QUANT_BACKENDS
+from ..device.npu_compatible_device import get_device_type
 
 
 QUANT_METHODS = {}
@@ -257,7 +258,7 @@ class QuantizeConfig:
         metadata = {"format": "pt", **{key: value if isinstance(value, str) else str(value) for key, value in metadata.items()}}
         return tensors, metadata
 
-    def measure_quantization_error(self, model: torch.nn.Module, compute_device="cuda", verbose=True) -> list:
+    def measure_quantization_error(self, model: torch.nn.Module, compute_device=get_device_type(), verbose=True) -> list:
         """
         Measure the weight error this config's quantization introduces.
 
@@ -525,7 +526,7 @@ class MixedQuantizeConfig:
         metadata = {"format": "pt", **{key: value if isinstance(value, str) else str(value) for key, value in merged_metadata.items()}}
         return tensors, metadata
 
-    def measure_quantization_error(self, model: torch.nn.Module, compute_device="cuda", verbose=True) -> list:
+    def measure_quantization_error(self, model: torch.nn.Module, compute_device=get_device_type(), verbose=True) -> list:
         """
         Measure the weight error of the mixed quantization.
         """

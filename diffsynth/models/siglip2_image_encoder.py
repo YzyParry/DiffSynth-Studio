@@ -129,7 +129,7 @@ class Siglip2ImageEncoder428M(Siglip2VisionModel):
             }
         )
         
-    def forward(self, image, torch_dtype=torch.bfloat16, device="cuda"):
+    def forward(self, image, torch_dtype=torch.bfloat16, device=get_device_type()):
         siglip_inputs = self.processor(images=[image], return_tensors="pt").to(device)
         shape = siglip_inputs.spatial_shapes[0]
         hidden_state = super().forward(**siglip_inputs).last_hidden_state

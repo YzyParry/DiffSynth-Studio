@@ -48,7 +48,7 @@ def rope_embed(ids: Tensor) -> Tensor:
 
 
 def rmsnorm_rope(x: Tensor, scale: Tensor, freqs: Tensor, eps: float = 1e-6) -> Tensor:
-    with torch.autocast(device_type="cuda", enabled=False):
+    with torch.autocast(device_type=x.device.type, enabled=False):
         b, h, l, d = x.shape
         x_f = x.float()
         x_norm = x_f * x_f.pow(2).mean(-1, keepdim=True).add(eps).rsqrt() * scale.float()

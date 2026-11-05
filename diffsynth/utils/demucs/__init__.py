@@ -1,9 +1,10 @@
 import torch, torchaudio
 from diffsynth import load_model, ModelConfig
+from diffsynth.core.device.npu_compatible_device import get_device_type
 from diffsynth.models.demucs import HTDemucs
 
 class AudioTrackSeparator(torch.nn.Module):
-    def __init__(self, torch_dtype=torch.float32, device="cuda", model_config=ModelConfig(model_id="DiffSynth-Studio/Demucs-Repackage", origin_file_pattern="model.safetensors")):
+    def __init__(self, torch_dtype=torch.float32, device=get_device_type(), model_config=ModelConfig(model_id="DiffSynth-Studio/Demucs-Repackage", origin_file_pattern="model.safetensors")):
         super().__init__()
         model_config.download_if_necessary()
         self.model = load_model(HTDemucs, model_config.path, torch_dtype=torch_dtype, device=device)

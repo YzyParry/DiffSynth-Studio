@@ -1221,7 +1221,7 @@ class WanVideoUnit_Animate2VAEEmbedder(PipelineUnit):
         )
 
     @staticmethod
-    def animate2_get_i2v_mask(lat_t, lat_h, lat_w, mask_len=1, device="cuda"):
+    def animate2_get_i2v_mask(lat_t, lat_h, lat_w, mask_len=1, device=get_device_type()):
         msk = torch.zeros(1, (lat_t - 1) * 4 + 1, lat_h, lat_w, device=device)
         msk[:, :mask_len] = 1
         msk = torch.concat([torch.repeat_interleave(msk[:, 0:1], repeats=4, dim=1), msk[:, 1:]], dim=1)

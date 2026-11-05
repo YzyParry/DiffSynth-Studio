@@ -1,6 +1,7 @@
 from abc import ABC
 from dataclasses import dataclass, fields
 import torch
+from ..device.npu_compatible_device import get_device_type
 
 
 QUANT_BACKENDS = {}
@@ -162,7 +163,7 @@ def check_differentiable(module: torch.nn.Module, example_input: torch.Tensor = 
 
 def check_backend_contract(backend, in_features: int = 512, out_features: int = 512,
                            compute_dtype: torch.dtype = torch.bfloat16,
-                           compute_device: str = "cuda", verbose: bool = True) -> bool:
+                           compute_device: str = get_device_type(), verbose: bool = True) -> bool:
     """
     Verify a backend satisfies the quantized-Linear contract: it declares its classes,
     both factory methods return instances of them, and every declared class subclasses

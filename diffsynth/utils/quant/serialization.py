@@ -2,11 +2,12 @@ from diffsynth.core.loader import ModelConfig
 from diffsynth.core.quant import QuantizeConfig, MixedQuantizeConfig
 from diffsynth.models.model_loader import ModelPool
 from diffsynth.core.loader import hash_model_file
+from diffsynth.core.device.npu_compatible_device import get_device_type
 from safetensors.torch import save_file
 import os
 
 
-def save_quantized_model(model_config: ModelConfig, output_path: str, device="cuda") -> str:
+def save_quantized_model(model_config: ModelConfig, output_path: str, device=get_device_type()) -> str:
     quantize = model_config.quantize
     if quantize is None:
         raise ValueError(

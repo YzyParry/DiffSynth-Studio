@@ -15,6 +15,8 @@ from torch.amp import autocast
 import torch.distributed as dist
 from einops import rearrange, reduce, pack, unpack
 
+from ..core.device.npu_compatible_device import get_device_type
+
 
 # helper functions
 
@@ -271,7 +273,7 @@ class FSQ(Module):
         # whether to force quantization step to be full precision or not
 
         force_f32 = self.force_quantization_f32
-        quantization_context = partial(autocast, 'cuda', enabled = False) if force_f32 else nullcontext
+        quantization_context = partial(autocast, get_device_type(), enabled = False) if force_f32 else nullcontext
 
         with quantization_context():
             orig_dtype = z.dtype
@@ -520,7 +522,7 @@ class ResidualFSQ(Module):
 
         # go through the layers
 
-        with autocast('cuda', enabled = False):
+        with autocast(get_device_type(), enabled = False):
             for quantizer_index, (layer, scale) in enumerate(zip(self.layers, self.scales)):
 
                 if should_quantize_dropout and quantizer_index > rand_quantize_dropout_index:

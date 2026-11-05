@@ -1,10 +1,11 @@
 from diffsynth import load_state_dict
+from diffsynth.core.device.npu_compatible_device import get_device_type
 import torch
 from safetensors.torch import save_file
 from tqdm import tqdm
 
 
-def dequantize(source_path, target_path, device="cuda", torch_dtype=torch.bfloat16):
+def dequantize(source_path, target_path, device=get_device_type(), torch_dtype=torch.bfloat16):
     sd = load_state_dict(source_path, device=device)
     for k in tqdm([k for k in sd if k.endswith(".weight_scale")]):
         weight_key = k[:-13] + ".weight"

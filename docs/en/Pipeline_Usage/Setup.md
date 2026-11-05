@@ -49,6 +49,16 @@ pip install torch torchvision --index-url https://download.pytorch.org/whl/rocm6
 
 On Apple Silicon devices, no changes to the installation steps are needed. However, since VRAM and memory are unified, replace all `"cuda"` in the code with `"mps"` or `"cpu"`.
 
+### Intel GPU (XPU)
+
+PyTorch supports Intel GPUs natively through the `xpu` device, so no extra plugin is needed (PyTorch 2.8 or later is recommended). Install the Intel GPU driver by following [Getting Started on Intel GPU](https://docs.pytorch.org/docs/stable/notes/get_start_xpu.html), install the XPU build of `torch` **first**, and then install DiffSynth-Studio as described above:
+
+```shell
+pip install torch torchvision --index-url https://download.pytorch.org/whl/xpu
+```
+
+When using Intel GPUs, replace `"cuda"` with `"xpu"` in your Python code. For details, see [Intel GPU Support](../Pipeline_Usage/GPU_support.md#intel-gpu-xpu).
+
 ### Ascend NPU
 
 1. Install [CANN](https://www.hiascend.com/document/detail/zh/canncommercial/83RC1/softwareinst/instg/instg_quick.html?Mode=PmIns&InstallType=local&OS=openEuler&Software=cannToolKit) through official documentation.

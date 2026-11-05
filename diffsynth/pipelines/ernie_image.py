@@ -75,7 +75,7 @@ class ErnieImagePipeline(BasePipeline):
         width: int = 1024,
         # Randomness
         seed: int = None,
-        rand_device: str = "cuda",
+        rand_device: str = get_device_type(),
         # Steps
         num_inference_steps: int = 50,
         sigma_shift: float = 3.0,

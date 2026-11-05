@@ -8,6 +8,7 @@ import torch.nn.functional as F
 from .general_modules import RMSNorm
 from ..core.attention import attention_forward
 from ..core.gradient import gradient_checkpoint_forward
+from ..core.device.npu_compatible_device import get_device_type
 
 
 ADALN_EMBED_DIM = 256
@@ -27,7 +28,7 @@ class TimestepEmbedder(nn.Module):
 
     @staticmethod
     def timestep_embedding(t, dim, max_period=10000):
-        with torch.amp.autocast("cuda", enabled=False):
+        with torch.amp.autocast(get_device_type(), enabled=False):
             half = dim // 2
             freqs = torch.exp(
                 -math.log(max_period) * torch.arange(start=0, end=half, dtype=torch.float32, device=t.device) / half

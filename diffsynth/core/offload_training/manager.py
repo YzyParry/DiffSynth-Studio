@@ -20,6 +20,7 @@ import torch.nn as nn
 import warnings
 from .offloader import StaticParamOffloader, TrainableParamOffloader, AlwaysOnGPUParamOffloader, BufferOffloader
 from .memory_buffer import PinnedArenaPool, BaseBufferPool
+from ..device import parse_device_type
 warnings.filterwarnings("ignore", message="Full backward hook is firing when gradients are computed with respect to module outputs")
 
 
@@ -174,4 +175,4 @@ class OffloadTrainingManager:
     def after_backward(self):
         for unit in self.units:
             unit.after_backward()
-        torch.cuda.synchronize()
+        getattr(torch, parse_device_type(self.target_device)).synchronize()
